@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +14,7 @@ import PanchayathManager from "./admin/PanchayathManager";
 import AnnouncementManager from "./admin/AnnouncementManager";
 import PhotoGalleryManager from "./admin/PhotoGalleryManager";
 import NotificationManager from "./admin/NotificationManager";
+import AdminSetup from "./AdminSetup";
 
 const AdminPanel = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -63,12 +63,9 @@ const AdminPanel = () => {
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Alert className="max-w-md" variant="destructive">
-          <Shield className="h-4 w-4" />
-          <AlertDescription>
-            You don't have permission to access the admin panel. Contact an administrator for access.
-          </AlertDescription>
-        </Alert>
+        <div className="max-w-4xl mx-auto p-4">
+          <AdminSetup />
+        </div>
       </div>
     );
   }
@@ -253,6 +250,11 @@ const AdminPanel = () => {
         <TabsContent value="fees">
           <FeeManagement 
             categoryFees={legacyCategoryFees}
+            editingFees={false}
+            onEditStart={() => {}}
+            onEditCancel={() => {}}
+            onSave={() => {}}
+            onFeeUpdate={() => {}}
           />
         </TabsContent>
 
@@ -272,7 +274,7 @@ const AdminPanel = () => {
 
         <TabsContent value="gallery">
           <PhotoGalleryManager 
-            photoGallery={legacyPhotoGallery}
+            gallery={legacyPhotoGallery}
             onUpdate={() => refreshData()}
           />
         </TabsContent>

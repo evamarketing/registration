@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -13,6 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  makeUserAdmin: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,21 +66,54 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const checkAdminRole = async (userId: string) => {
     try {
+      // Use select() instead of single() to avoid 406 errors
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', 'admin')
-        .single();
+        .eq('role', 'admin');
 
-      if (data && !error) {
-        setIsAdmin(true);
-      } else {
+      if (error) {
+        console.error('Error checking admin role:', error);
         setIsAdmin(false);
+        return;
       }
+
+      // Check if any admin role exists for this user
+      setIsAdmin(data && data.length > 0);
     } catch (error) {
       console.error('Error checking admin role:', error);
       setIsAdmin(false);
+    }
+  };
+
+  const makeUserAdmin = async (email: string) => {
+    try {
+      // Call the database function to assign admin role
+      const { error } = await supabase.rpc('assign_admin_role', {
+        user_email: email
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Admin Role Assigned",
+        description: `User ${email} has been granted admin access.`,
+      });
+
+      // Refresh admin status if it's the current user
+      if (user?.email === email) {
+        await checkAdminRole(user.id);
+      }
+    } catch (error: any) {
+      console.error('Error assigning admin role:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign admin role",
+        variant: "destructive",
+      });
     }
   };
 
@@ -176,6 +209,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signUp,
     signOut,
     resetPassword,
+    makeUserAdmin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
