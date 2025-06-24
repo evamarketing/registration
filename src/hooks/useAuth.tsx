@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkAdminRole(session.user.id);
+        checkAdminRole(session.user.id, session.user.email);
       }
       setLoading(false);
     });
@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkAdminRole(session.user.id);
+        checkAdminRole(session.user.id, session.user.email);
       } else {
         setIsAdmin(false);
       }
@@ -64,9 +64,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkAdminRole = async (userId: string) => {
+  const checkAdminRole = async (userId: string, email?: string) => {
     try {
-      // Use select() instead of single() to avoid 406 errors
+      // Check if user is the main admin by email
+      if (email === 'evamarketingsolutions@gmail.com') {
+        setIsAdmin(true);
+        return;
+      }
+
+      // Check admin role in database
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -79,7 +85,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         return;
       }
 
-      // Check if any admin role exists for this user
       setIsAdmin(data && data.length > 0);
     } catch (error) {
       console.error('Error checking admin role:', error);
@@ -89,7 +94,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const makeUserAdmin = async (email: string) => {
     try {
-      // Call the database function to assign admin role
+      // Special handling for main admin
+      if (email === 'evamarketingsolutions@gmail.com') {
+        // Call the database function to ensure admin user exists
+        const { error } = await supabase.rpc('create_admin_user');
+        
+        if (error) {
+          throw error;
+        }
+
+        toast({
+          title: "Main Admin Setup Complete",
+          description: `Admin user ${email} has been configured with universal access.`,
+        });
+
+        // Refresh admin status if it's the current user
+        if (user?.email === email) {
+          setIsAdmin(true);
+        }
+        return;
+      }
+
+      // For other users, use the assign_admin_role function
       const { error } = await supabase.rpc('assign_admin_role', {
         user_email: email
       });
@@ -105,7 +131,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       // Refresh admin status if it's the current user
       if (user?.email === email) {
-        await checkAdminRole(user.id);
+        await checkAdminRole(user.id, user.email);
       }
     } catch (error: any) {
       console.error('Error assigning admin role:', error);

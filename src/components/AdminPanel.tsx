@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield } from "lucide-react";
+import { Shield, Database } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSupabaseData } from "@/hooks/useSupabaseData";
 import AdminStats from "./admin/AdminStats";
@@ -15,6 +15,7 @@ import AnnouncementManager from "./admin/AnnouncementManager";
 import PhotoGalleryManager from "./admin/PhotoGalleryManager";
 import NotificationManager from "./admin/NotificationManager";
 import AdminSetup from "./AdminSetup";
+import AdminDashboard from "./AdminDashboard";
 
 const AdminPanel = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -197,16 +198,23 @@ const AdminPanel = () => {
           <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
           <p className="text-gray-600">Self Employment Development Program</p>
         </div>
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-          <Shield className="w-3 h-3 mr-1" />
-          Administrator
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+            <Shield className="w-3 h-3 mr-1" />
+            Administrator
+          </Badge>
+          {user.email === 'evamarketingsolutions@gmail.com' && (
+            <Badge className="bg-green-600 text-white">
+              <Database className="w-3 h-3 mr-1" />
+              Primary Admin
+            </Badge>
+          )}
+        </div>
       </div>
 
-      <AdminStats registrations={legacyRegistrations} />
-
-      <Tabs defaultValue="registrations" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
+      <Tabs defaultValue="dashboard" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-7">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="registrations">Registrations</TabsTrigger>
           <TabsTrigger value="fees">Category Fees</TabsTrigger>
           <TabsTrigger value="panchayaths">Panchayaths</TabsTrigger>
@@ -215,12 +223,18 @@ const AdminPanel = () => {
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="dashboard" className="space-y-6">
+          <AdminDashboard />
+        </TabsContent>
+
         <TabsContent value="registrations" className="space-y-6">
+          <AdminStats registrations={legacyRegistrations} />
+          
           <Card>
             <CardHeader>
               <CardTitle>Registration Management</CardTitle>
               <CardDescription>
-                Manage and review registration applications
+                Manage and review registration applications with universal admin access
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
